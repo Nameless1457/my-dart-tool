@@ -13,18 +13,23 @@ year = st.sidebar.selectbox("분석 연도", ["2023", "2022", "2021"])
 # 메인 화면 - 경쟁사 입력
 target_company = st.text_input("비교할 경쟁사 이름을 입력하세요 (예: 현대제철, 휴스틸)", "현대제철")
 
-# 비밀 금고(Secrets 또는 환경변수)에서 키를 안전하게 가져오기
-api_key = None
-if "DART_API_KEY" in st.secrets:
-    api_key = st.secrets["DART_API_KEY"]
-elif "DART_API_KEY" in os.environ:
-    api_key = os.environ["DART_API_KEY"]
+# [수정] 클라우드타입의 시스템 금고(os.environ)를 최우선으로 확인하여 에러를 방지합니다.
+api_key = os.environ.get("DART_API_KEY")
 
+# 만약 시스템 금고에 없다면, 그때 Streamlit 전용 금고를 안전하게 열어봅니다.
+if not api_key:
+    try:
+        if "DART_API_KEY" in st.secrets:
+            api_key = st.secrets["DART_API_KEY"]
+    except Exception:
+        pass
+
+# 최종적으로 키가 없으면 경고창을 띄웁니다.
 if api_key:
     # 혹시라도 묻어왔을지 모르는 공백이나 따옴표 제거
     api_key = str(api_key).strip().strip('"').strip("'")
 else:
-    st.error("🔒 설정에서 'DART_API_KEY'를 등록해 주세요!")
+    st.error("🔒 클라우드타입 설정창에서 '환경 변수(DART_API_KEY)'를 등록해 주세요!")
     st.stop()
 
 if api_key:
