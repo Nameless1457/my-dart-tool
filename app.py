@@ -1,6 +1,7 @@
 import streamlit as st
 import OpenDartReader
 import pandas as pd
+import os
 
 st.set_page_config(page_title="세아제강 공시 분석", layout="wide")
 st.title("📈 세아제강 vs 경쟁사 분석 대시보드")
@@ -12,20 +13,22 @@ year = st.sidebar.selectbox("분석 연도", ["2023", "2022", "2021"])
 # 메인 화면 - 경쟁사 입력
 target_company = st.text_input("비교할 경쟁사 이름을 입력하세요 (예: 현대제철, 휴스틸)", "현대제철")
 
-# 외부 비밀 금고(Secrets)에서 키를 안전하게 가져오기
-try:
-    raw_key = st.secrets["DART_API_KEY"]
-    
-    # [방탄 조치] 혹시라도 묻어왔을지 모르는 앞뒤 공백, 큰따옴표, 작은따옴표를 완벽히 제거하고 순수 글자로 변환합니다.
-    api_key = str(raw_key).strip().strip('"').strip("'")
-    
-except KeyError:
-    st.error("🔒 Streamlit Cloud 설정에서 'DART_API_KEY'를 등록해 주세요!")
+# 비밀 금고(Secrets 또는 환경변수)에서 키를 안전하게 가져오기
+api_key = None
+if "DART_API_KEY" in st.secrets:
+    api_key = st.secrets["DART_API_KEY"]
+elif "DART_API_KEY" in os.environ:
+    api_key = os.environ["DART_API_KEY"]
+
+if api_key:
+    # 혹시라도 묻어왔을지 모르는 공백이나 따옴표 제거
+    api_key = str(api_key).strip().strip('"').strip("'")
+else:
+    st.error("🔒 설정에서 'DART_API_KEY'를 등록해 주세요!")
     st.stop()
 
 if api_key:
     try:
-        # 안전하게 DART 연결 기동
         dart = OpenDartReader(api_key)
         seah_code = '00306200' 
         
@@ -76,6 +79,4 @@ if api_key:
             st.error("회사 정보를 찾을 수 없거나 해당 연도의 표준재무제표가 공시되지 않았습니다.")
 
     except Exception as e:
-        st.error(f"⚠️ DART 시스템과 연결 중 문제가 발생했습니다. 조금 뒤에 다시 시도해 주세요. (에러 내용: {e})")
-else:
-    st.warning("API 키가 올바르지 않습니다.")
+        st.error(f"⚠️ 데이터 처리 중 문제가 발생했습니다. (에러 내용: {e})")
