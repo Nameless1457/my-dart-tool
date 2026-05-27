@@ -13,18 +13,10 @@ year = st.sidebar.selectbox("분석 연도", ["2023", "2022", "2021"])
 # 메인 화면 - 경쟁사 입력
 target_company = st.text_input("비교할 경쟁사 이름을 입력하세요 (예: 현대제철, 휴스틸)", "현대제철")
 
-# [수정] 클라우드타입의 시스템 금고(os.environ)를 최우선으로 확인하여 에러를 방지합니다.
+# [⚠️ 핵심 수정] st.secrets 관련 코드를 단 한 줄도 남기지 않고 모두 지웠습니다.
+# 오직 클라우드타입 전용 시스템 금고(os.environ)만 확인합니다.
 api_key = os.environ.get("DART_API_KEY")
 
-# 만약 시스템 금고에 없다면, 그때 Streamlit 전용 금고를 안전하게 열어봅니다.
-if not api_key:
-    try:
-        if "DART_API_KEY" in st.secrets:
-            api_key = st.secrets["DART_API_KEY"]
-    except Exception:
-        pass
-
-# 최종적으로 키가 없으면 경고창을 띄웁니다.
 if api_key:
     # 혹시라도 묻어왔을지 모르는 공백이나 따옴표 제거
     api_key = str(api_key).strip().strip('"').strip("'")
