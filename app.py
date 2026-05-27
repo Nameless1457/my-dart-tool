@@ -4,7 +4,7 @@ import pandas as pd
 import os
 
 st.set_page_config(page_title="세아제강 공시 분석", layout="wide")
-st.title("📈 세아제강 vs 경쟁사 분석 대시보드")
+st.title("🚀 [최신] 세아제강 vs 경쟁사 대시보드")
 
 # 사이드바 설정
 st.sidebar.header("⚙️ 설정")
@@ -13,12 +13,10 @@ year = st.sidebar.selectbox("분석 연도", ["2023", "2022", "2021"])
 # 메인 화면 - 경쟁사 입력
 target_company = st.text_input("비교할 경쟁사 이름을 입력하세요 (예: 현대제철, 휴스틸)", "현대제철")
 
-# [⚠️ 핵심 수정] st.secrets 관련 코드를 단 한 줄도 남기지 않고 모두 지웠습니다.
-# 오직 클라우드타입 전용 시스템 금고(os.environ)만 확인합니다.
+# 클라우드타입 전용 시스템 금고(os.environ) 확인
 api_key = os.environ.get("DART_API_KEY")
 
 if api_key:
-    # 혹시라도 묻어왔을지 모르는 공백이나 따옴표 제거
     api_key = str(api_key).strip().strip('"').strip("'")
 else:
     st.error("🔒 클라우드타입 설정창에서 '환경 변수(DART_API_KEY)'를 등록해 주세요!")
@@ -26,7 +24,14 @@ else:
 
 if api_key:
     try:
+        # 안전하게 DART 연결 기동
         dart = OpenDartReader(api_key)
+        
+        # [🎯 방어벽 추가] OpenDartReader가 DART로부터 회사 사전(corp_codes)을 잘 받아왔는지 검사합니다.
+        if dart.corp_codes is None:
+            st.error("❌ DART에서 회사 고유번호 목록을 불러오지 못했습니다. 클라우드타입의 'DART_API_KEY' 값이 진짜 내 API 키와 일치하는지, 오타가 없는지 꼭 확인해 주세요!")
+            st.stop()
+            
         seah_code = '00306200' 
         
         def get_finance_data(corp_identifier):
@@ -76,4 +81,6 @@ if api_key:
             st.error("회사 정보를 찾을 수 없거나 해당 연도의 표준재무제표가 공시되지 않았습니다.")
 
     except Exception as e:
-        st.error(f"⚠️ 데이터 처리 중 문제가 발생했습니다. (에러 내용: {e})")
+        # [🎯 디버깅 업그레이드] 에러가 난 정확한 코드 위치를 시각적으로 보여줍니다.
+        st.error("⚠️ 데이터 처리 중 에러가 발생했습니다. 아래 세부 경로를 확인하세요:")
+        st.exception(e)
